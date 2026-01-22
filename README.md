@@ -18,6 +18,9 @@
 
 ---
 
+> [!WARNING]
+> Use of this tool may violate the terms of service. The authors are not responsible for any consequences of using this tool.
+
 ## Features
 
 - Automated daily attendance check-in for Arknights: Endfield
