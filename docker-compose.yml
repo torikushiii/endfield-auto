@@ -1,0 +1,9 @@
+services:
+  ak-auto:
+    build: .
+    container_name: ak-auto
+    restart: unless-stopped
+    volumes:
+      - ./config.json:/app/config.json
+    environment:
+      - TZ=Asia/Shanghai
