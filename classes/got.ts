@@ -1,6 +1,6 @@
-import got from "got";
+import got, { type OptionsInit, RequestError, HTTPError, TimeoutError, ParseError, CancelError } from "got";
 
-export interface GotModuleOptions {
+export interface GotModuleOptions extends OptionsInit {
     headers?: Record<string, string>;
     timeout?: { request?: number };
     [key: string]: unknown;
@@ -14,7 +14,7 @@ export interface GotModule {
     description: string;
 }
 
-export interface GotRequestOptions {
+export interface GotRequestOptions extends OptionsInit {
     url: string;
     method?: "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
     headers?: Record<string, string>;
@@ -25,6 +25,20 @@ export interface GotRequestOptions {
 class Got {
     #children = new Map<string, GotModule>();
 
+    static sanitize(url: string): string {
+        return url
+            .replaceAll(/\.\.[/\\]?/g, "")
+            .replaceAll(/%2E%2E[/\\]?/g, "");
+    }
+
+    static isRequestError(error: unknown): error is RequestError {
+        return error instanceof RequestError ||
+               error instanceof HTTPError ||
+               error instanceof TimeoutError ||
+               error instanceof ParseError ||
+               error instanceof CancelError;
+    }
+
     async importData(): Promise<void> {
         const modules = await import("../gots");
 
@@ -33,6 +47,8 @@ class Got {
                 this.#add(mod);
             }
         }
+
+        this.#validateHierarchy();
     }
 
     #isGotModule(mod: unknown): mod is GotModule {
@@ -48,39 +64,29 @@ class Got {
         this.#children.set(module.name.toLowerCase(), module);
     }
 
-    #resolveOptions(moduleName: string, ...args: unknown[]): GotModuleOptions {
+    #validateHierarchy(): void {
+        for (const module of this.#children.values()) {
+            if (module.parent && !this.#children.has(module.parent.toLowerCase())) {
+                throw new Error(`Invalid Got configuration: Module "${module.name}" references non-existent parent "${module.parent}"`);
+            }
+        }
+    }
+
+    #resolveInstance(moduleName: string, ...args: unknown[]): typeof got {
         const module = this.#children.get(moduleName.toLowerCase());
         if (!module) {
             throw new Error(`Got module not found: ${moduleName}`);
         }
 
-        // Get parent options first (recursive)
-        let parentOptions: GotModuleOptions = {};
-        if (module.parent) {
-            parentOptions = this.#resolveOptions(module.parent, ...args);
-        }
+        const parentInstance = module.parent
+            ? this.#resolveInstance(module.parent, ...args)
+            : got;
 
-        // Get current module options
-        let currentOptions: GotModuleOptions;
-        if (module.optionsType === "function" && typeof module.options === "function") {
-            currentOptions = module.options(...args);
-        } else {
-            currentOptions = module.options as GotModuleOptions;
-        }
+        const currentOptions = (module.optionsType === "function" && typeof module.options === "function")
+            ? module.options(...args)
+            : module.options as GotModuleOptions;
 
-        // Deep merge: parent + current (current takes precedence)
-        return this.#mergeOptions(parentOptions, currentOptions);
-    }
-
-    #mergeOptions(parent: GotModuleOptions, child: GotModuleOptions): GotModuleOptions {
-        return {
-            ...parent,
-            ...child,
-            headers: {
-                ...(parent.headers || {}),
-                ...(child.headers || {}),
-            },
-        };
+        return parentInstance.extend(currentOptions);
     }
 
     async request<T = unknown>(
@@ -89,24 +95,17 @@ class Got {
         ...args: unknown[]
     ): Promise<T> {
         const { url, ...restRequestOptions } = requestOptions;
+        const sanitizedUrl = Got.sanitize(url);
 
-        const resolvedOptions = this.#resolveOptions(moduleName, ...args);
-        const mergedOptions = this.#mergeOptions(resolvedOptions, restRequestOptions);
+        const instance = this.#resolveInstance(moduleName, ...args);
+        const response = await instance<T>(sanitizedUrl, {
+            ...restRequestOptions,
+            responseType: "json",
+            isStream: false,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any);
 
-        const finalOptions = {
-            ...mergedOptions,
-            headers: {
-                ...(resolvedOptions.headers || {}),
-                ...(restRequestOptions.headers || {}),
-            },
-        };
-
-        const response = await got(url, {
-            ...finalOptions,
-            responseType: "json" as const,
-        });
-
-        return response.body as T;
+        return response.body;
     }
 
     get modules(): Map<string, GotModule> {
