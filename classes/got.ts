@@ -1,10 +1,15 @@
-import got, { type OptionsInit, RequestError, HTTPError, TimeoutError, ParseError, CancelError } from "got";
+import got, {
+    type OptionsInit,
+    RequestError,
+    HTTPError,
+    TimeoutError,
+    ParseError,
+    CancelError,
+    type Got as GotInstance,
+    type OptionsOfJSONResponseBody
+} from "got";
 
-export interface GotModuleOptions extends OptionsInit {
-    headers?: Record<string, string>;
-    timeout?: { request?: number };
-    [key: string]: unknown;
-}
+export type GotModuleOptions = OptionsInit;
 
 export interface GotModule {
     name: string;
@@ -16,10 +21,6 @@ export interface GotModule {
 
 export interface GotRequestOptions extends OptionsInit {
     url: string;
-    method?: "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
-    headers?: Record<string, string>;
-    json?: unknown;
-    [key: string]: unknown;
 }
 
 class Got {
@@ -40,7 +41,7 @@ class Got {
     }
 
     async importData(): Promise<void> {
-        const modules = await import("../gots");
+        const modules = await import("../gots") as Record<string, GotModule>;
 
         for (const mod of Object.values(modules)) {
             if (this.#isGotModule(mod)) {
@@ -72,7 +73,7 @@ class Got {
         }
     }
 
-    #resolveInstance(moduleName: string, ...args: unknown[]): typeof got {
+    #resolveInstance(moduleName: string, ...args: unknown[]): GotInstance {
         const module = this.#children.get(moduleName.toLowerCase());
         if (!module) {
             throw new Error(`Got module not found: ${moduleName}`);
@@ -102,8 +103,7 @@ class Got {
             ...restRequestOptions,
             responseType: "json",
             isStream: false,
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        } as any);
+        } as OptionsOfJSONResponseBody);
 
         return response.body;
     }
