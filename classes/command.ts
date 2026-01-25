@@ -4,6 +4,7 @@ import logger from "../utils/logger";
 export interface CommandContext {
     platform: Platform;
     ephemeral: (content: string | Record<string, unknown>) => Promise<void> | void;
+    defer: () => Promise<void> | void;
 }
 
 export interface CommandOption {

@@ -21,13 +21,6 @@ function buildDiscordEmbed(result: CheckInResult, index: number, total: number) 
         color = EMBED_COLOR_SUCCESS;
         title = "Daily Sign-in Claimed";
         description = `Successfully claimed rewards for **${nickname}**`;
-        if (rewards.length > 0) {
-            const rewardsText = rewards
-                .map((r) => `- **${r.name}** x${r.count}`)
-                .join("\n");
-            fields.push({ name: "Today's Reward", value: rewardsText, inline: false });
-            thumbnail = rewards[0]?.icon || ENDFIELD_ICON;
-        }
         break;
     case "already_claimed":
         color = EMBED_COLOR_ALREADY;
@@ -43,6 +36,14 @@ function buildDiscordEmbed(result: CheckInResult, index: number, total: number) 
             fields.push({ name: "Error", value: error, inline: false });
         }
         break;
+    }
+
+    if (rewards.length > 0) {
+        const rewardsText = rewards
+            .map((r) => `- **${r.name}** x${r.count}`)
+            .join("\n");
+        fields.push({ name: "Today's Reward", value: rewardsText, inline: false });
+        thumbnail = rewards[0]?.icon || ENDFIELD_ICON;
     }
 
     if (result.game) {

@@ -67,6 +67,7 @@ const terminal: CommandModule = {
         ];
     },
     run: async (ctx: CommandContext, accountArg?: string) => {
+        await ctx.defer();
         try {
             const endfield = ak.SKPort.get("endfield");
             if (!endfield) {

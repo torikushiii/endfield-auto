@@ -64,6 +64,11 @@ export class DiscordPlatform extends Platform {
 
             await ak.Commands.checkAndRun(commandName, {
                 platform: this,
+                defer: async () => {
+                    if (!interaction.replied && !interaction.deferred) {
+                        await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
+                    }
+                },
                 ephemeral: async (content: string | Record<string, unknown>) => {
                     let payload: Record<string, unknown> = typeof content === "string" ? { content } : content;
                     if (typeof content === "string" && content.startsWith("{") && content.endsWith("}")) {

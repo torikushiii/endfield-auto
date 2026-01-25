@@ -7,7 +7,12 @@ const ENDFIELD_ICON = "https://play-lh.googleusercontent.com/IHJeGhqSpth4VzATp_a
 
 export interface AttendanceData {
     hasToday: boolean;
-    records?: unknown[];
+    records?: Array<{
+        resourceId: string;
+        resourceName: string;
+        count: number;
+        icon: string;
+    }>;
 }
 
 export interface ClaimData {
@@ -86,6 +91,18 @@ export class CheckIn {
                 result.attendance = {
                     totalSignIns: attendanceData.data.records.length,
                 };
+
+                // If already claimed, extract last reward from history
+                if (!canClaim) {
+                    const lastRecord = attendanceData.data.records[attendanceData.data.records.length - 1];
+                    if (lastRecord) {
+                        result.rewards = [{
+                            name: lastRecord.resourceName,
+                            count: lastRecord.count,
+                            icon: lastRecord.icon,
+                        }];
+                    }
+                }
             }
         }
 
