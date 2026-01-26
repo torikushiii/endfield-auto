@@ -29,7 +29,7 @@ function buildStaminaEmbed(account: StoredAccount, threshold: number) {
     if (game?.serverName) fields.push({ name: "Region", value: game.serverName, inline: true });
 
     if (stamina?.recoveryTime) {
-        fields.push({ name: "Fully Restored", value: formatTimeRemaining(stamina.recoveryTime), inline: false });
+        fields.push({ name: "Fully Restored in", value: formatTimeRemaining(stamina.recoveryTime), inline: false });
     }
 
     return {
@@ -38,9 +38,9 @@ function buildStaminaEmbed(account: StoredAccount, threshold: number) {
             ? `**${nickname}**'s stamina is reaching the limit!`
             : `**${nickname}**'s stamina status update.`,
         color: isAboveThreshold ? EMBED_COLOR_WARNING : EMBED_COLOR_STAMINA,
-        thumbnail: { url: ENDFIELD_ICON },
+        thumbnail: { url: avatar },
         fields,
-        footer: { text: "SKPort Stamina Monitor", icon_url: avatar },
+        footer: { text: "SKPort Stamina Monitor", icon_url: ENDFIELD_ICON },
         timestamp: new Date().toISOString(),
     };
 }

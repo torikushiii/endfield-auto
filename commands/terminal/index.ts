@@ -40,7 +40,7 @@ function buildTerminalEmbed(accountName: string, stats: GameStats, uid: string, 
         color: EMBED_COLOR,
         thumbnail: { url: avatar || ENDFIELD_ICON },
         fields,
-        footer: { text: "Endfield Field Terminal Status" },
+        footer: { text: "Endfield Field Terminal Status", icon_url: ENDFIELD_ICON },
         timestamp: new Date().toISOString(),
     };
 }
@@ -53,20 +53,25 @@ const terminal: CommandModule = {
         const endfield = ak.SKPort.get("endfield");
         const accounts = endfield?.accounts || [];
 
+        const choices = [
+            { name: "All Accounts", value: "all" },
+            ...accounts.map(a => ({
+                name: a.game?.nickname || a.account.name,
+                value: a.account.name
+            }))
+        ];
+
         return [
             {
                 name: "account",
-                description: "The name of the account to show stats for",
+                description: "Select an account or all accounts",
                 type: 3,
-                required: false,
-                choices: accounts.map(a => ({
-                    name: a.game?.nickname || a.account.name,
-                    value: a.account.name
-                })).slice(0, 25)
+                required: true,
+                choices: choices.slice(0, 25)
             }
         ];
     },
-    run: async (ctx: CommandContext, accountArg?: string) => {
+    run: async (ctx: CommandContext, accountArg: string) => {
         await ctx.defer();
         try {
             const endfield = ak.SKPort.get("endfield");
@@ -82,10 +87,10 @@ const terminal: CommandModule = {
 
             let accountsToShow = endfield.accounts;
 
-            if (accountArg) {
+            if (accountArg && accountArg !== "all") {
                 const filtered = endfield.accounts.filter(a =>
-                    a.account.name.toLowerCase().includes(accountArg.toLowerCase()) ||
-                    a.game?.nickname?.toLowerCase().includes(accountArg.toLowerCase())
+                    a.account.name === accountArg ||
+                    a.game?.nickname === accountArg
                 );
 
                 if (filtered.length === 0) {

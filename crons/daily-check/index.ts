@@ -23,9 +23,9 @@ function buildDailyEmbed(account: StoredAccount) {
         title: "Daily Mission Reminder",
         description: `**${nickname}** has not completed all daily missions yet!`,
         color: EMBED_COLOR_DAILY,
-        thumbnail: { url: ENDFIELD_ICON },
+        thumbnail: { url: avatar },
         fields,
-        footer: { text: "SKPort Daily Monitor", icon_url: avatar },
+        footer: { text: "SKPort Daily Monitor", icon_url: ENDFIELD_ICON },
         timestamp: new Date().toISOString(),
     };
 }
