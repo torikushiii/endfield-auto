@@ -12,6 +12,13 @@
             "active": true,
             "type": "webhook",
             "url": "https://discord.com/api/webhooks/YOUR_WEBHOOK_URL_HERE"
+        },
+        {
+            "id": "telegram_bot",
+            "active": false,
+            "type": "telegram",
+            "token": "YOUR_TELEGRAM_BOT_TOKEN",
+            "chatId": "YOUR_TELEGRAM_CHAT_ID"
         }
     ],
     "crons": [
@@ -42,6 +49,16 @@
                 "HELP_STAMINA_THRESHOLD": "Current Max Stamina - threshold. E.g. 210 - 10 = 200 threshold",
                 "stamina_threshold": -10,
                 "daily_check": true
+            }
+        },
+        {
+            "name": "My Second Account",
+            "cred": "YOUR_CRED_TOKEN_HERE",
+            "sk_game_role": "SERVER_UID_RANDOM",
+            "settings": {
+                "stamina_check": false,
+                "stamina_threshold": -20,
+                "daily_check": false
             }
         }
     ]

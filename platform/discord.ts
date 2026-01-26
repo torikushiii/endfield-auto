@@ -27,7 +27,7 @@ export class DiscordPlatform extends Platform {
     }
 
     override isConfigured(): boolean {
-        return this.#isValidWebhook(this.#webhookUrl);
+        return this.#isValidWebhook(this.#webhookUrl) || this.isBotConfigured();
     }
 
     isBotConfigured(): boolean {
@@ -38,9 +38,8 @@ export class DiscordPlatform extends Platform {
         return this.#client;
     }
 
-    async startBot(): Promise<void> {
-        if (!this.#token || !this.#botId) {
-            ak.Logger.warn("Discord bot token or ID not configured");
+    override async startBot(): Promise<void> {
+        if (!this.isBotConfigured()) {
             return;
         }
 

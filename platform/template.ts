@@ -19,6 +19,10 @@ export abstract class Platform {
     isConfigured(): boolean {
         return true;
     }
+
+    async startBot(): Promise<void> {
+        // Optional: to be implemented by platforms that support interactive bots
+    }
 }
 
 export default Platform;

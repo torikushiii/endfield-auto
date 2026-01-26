@@ -2,6 +2,7 @@ import logger from "./utils/logger";
 import { loadConfig } from "./utils/config";
 import Got, { type GotRequestOptions } from "./classes/got";
 import { DiscordPlatform } from "./platform/discord";
+import { TelegramPlatform } from "./platform/telegram";
 import { Game } from "./skport/template";
 import Endfield from "./skport/endfield";
 import initializeCrons from "./crons";
@@ -32,6 +33,8 @@ async function initializeAk(): Promise<void> {
             platforms.set(pConfig.id, new DiscordPlatform(undefined, pConfig.token, pConfig.botId));
         } else if (pConfig.type === "webhook") {
             platforms.set(pConfig.id, new DiscordPlatform(pConfig.url, undefined));
+        } else if (pConfig.type === "telegram") {
+            platforms.set(pConfig.id, new TelegramPlatform(pConfig.token, pConfig.chatId));
         }
     }
 
@@ -58,7 +61,7 @@ async function main(): Promise<void> {
     initializeCrons();
 
     for (const platform of ak.Platforms.values()) {
-        if (platform instanceof DiscordPlatform && platform.isBotConfigured()) {
+        if (platform.isConfigured()) {
             await platform.startBot();
         }
     }

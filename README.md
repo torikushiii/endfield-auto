@@ -24,9 +24,9 @@
 -   **Stamina Monitoring**: Tracks current stamina and predicts exactly when it will reach maximum capacity using real-time regeneration logic.
 -   **Daily Mission Reminders**: Automated checks to ensure you haven't missed your daily mission rewards before the server reset.
 -   **Interactive Terminal**: Real-time insights into level, world level, BP progress, and daily mission activation.
--   **Discord Integration**: Slash Command support and rich notification embeds via Bot or Webhook.
+-   **Discord & Telegram Integration**: Full Slash Command and Bot support for both Discord and Telegram.
 -   **Multi-Account**: Manage multiple Arknights: Endfield accounts from a single instance.
--   **Headless Mode**: Can run entirely without Discord, perfect for lightweight server hosting with console-only logging.
+-   **Headless Mode**: Can run entirely via console logging or automated notifications, perfect for lightweight server hosting.
 
 ---
 
@@ -89,7 +89,7 @@ The assistant provides powerful Discord Slash Commands for manual monitoring and
 
 | Command | Alias | Description |
 | :--- | :--- | :--- |
-| `/terminal [account]` | `/stats`, `/stamina` | Displays full protocol status (Stamina, BP, Dailies, Progression). Supports account filtering. |
+| `/terminal <account>` | `/stats`, `/stamina` | Displays full protocol status (Stamina, BP, Dailies, Progression). **(Required)** Choose a specific account or "All Accounts". |
 | `/check-in` | `/ci` | Manually triggers the daily attendance claim for all accounts. |
 
 ---
@@ -119,6 +119,13 @@ The `config.json` is the central brain of the assistant.
             "active": true,
             "token": "BOT_TOKEN",
             "botId": "APPLICATION_ID"
+        },
+        {
+            "id": "telegram_bot",
+            "type": "telegram",
+            "active": true,
+            "token": "TELEGRAM_BOT_TOKEN",
+            "chatId": "YOUR_CHAT_ID"
         }
     ],
     "crons": [

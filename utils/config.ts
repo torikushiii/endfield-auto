@@ -16,7 +16,7 @@ export interface Account {
     };
 }
 
-export type PlatformType = "discord" | "webhook";
+export type PlatformType = "discord" | "webhook" | "telegram";
 
 export interface BasePlatformConfig {
     id: string;
@@ -35,7 +35,13 @@ export interface WebhookPlatformConfig extends BasePlatformConfig {
     url: string;
 }
 
-export type PlatformConfig = DiscordPlatformConfig | WebhookPlatformConfig;
+export interface TelegramPlatformConfig extends BasePlatformConfig {
+    type: "telegram";
+    token: string;
+    chatId: string;
+}
+
+export type PlatformConfig = DiscordPlatformConfig | WebhookPlatformConfig | TelegramPlatformConfig;
 
 export interface CronConfig {
     name: string;
