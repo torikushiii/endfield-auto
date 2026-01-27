@@ -1,12 +1,10 @@
 import logger from "./utils/logger";
 import { loadConfig } from "./utils/config";
 import Got, { type GotRequestOptions } from "./classes/got";
-import { DiscordPlatform } from "./platform/discord";
-import { TelegramPlatform } from "./platform/telegram";
 import { Game } from "./skport/template";
 import Endfield from "./skport/endfield";
 import initializeCrons from "./crons";
-import type { Platform } from "./platform/template";
+import Platform from "./platform/template";
 import Commands from "./classes/command";
 
 async function initializeAk(): Promise<void> {
@@ -29,13 +27,8 @@ async function initializeAk(): Promise<void> {
     for (const pConfig of config.platforms) {
         if (!pConfig.active) continue;
 
-        if (pConfig.type === "discord") {
-            platforms.set(pConfig.id, new DiscordPlatform(undefined, pConfig.token, pConfig.botId));
-        } else if (pConfig.type === "webhook") {
-            platforms.set(pConfig.id, new DiscordPlatform(pConfig.url, undefined));
-        } else if (pConfig.type === "telegram") {
-            platforms.set(pConfig.id, new TelegramPlatform(pConfig.token, pConfig.chatId));
-        }
+        const platform = await Platform.create(pConfig);
+        platforms.set(pConfig.id, platform);
     }
 
     globalThis.ak = {
@@ -60,11 +53,11 @@ async function main(): Promise<void> {
 
     initializeCrons();
 
-    for (const platform of ak.Platforms.values()) {
-        if (platform.isConfigured()) {
-            await platform.startBot();
-        }
-    }
+    const botStarts = Array.from(ak.Platforms.values())
+        .filter(platform => platform.isConfigured())
+        .map(platform => platform.startBot());
+
+    await Promise.all(botStarts);
 }
 
 process.on("unhandledRejection", (reason) => {

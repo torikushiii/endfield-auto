@@ -35,8 +35,8 @@ export class TelegramPlatform extends Platform {
         return !!this.#token && !!this.#chatId;
     }
 
-    async send(content: string | DiscordEmbed, overrideChatId?: string): Promise<void> {
-        const destChatId = overrideChatId || this.#chatId;
+    async send(content: string | DiscordEmbed, options?: { chatId?: string }): Promise<void> {
+        const destChatId = options?.chatId || this.#chatId;
         if (!this.#token || !destChatId) {
             return;
         }
@@ -153,7 +153,7 @@ export class TelegramPlatform extends Platform {
                 // Telegram doesn't strictly need a "defer"
             },
             ephemeral: async (content: string | DiscordEmbed) => {
-                await this.send(content, chatId);
+                await this.send(content, { chatId });
             },
         }, ...args);
     }
