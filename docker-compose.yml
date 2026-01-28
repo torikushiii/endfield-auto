@@ -1,8 +1,9 @@
 services:
-  endfield-auto:
-    build: .
+  instance:
+    image: ghcr.io/torikushiii/endfield-auto:latest
+    restart: on-failure:5
     container_name: endfield-auto
-    restart: always
+    network_mode: bridge
     volumes:
       - ./config.json:/app/config.json
     environment:
