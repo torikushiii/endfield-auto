@@ -1,5 +1,7 @@
 import { Game, type SignInResult, type StoredAccount, getProfile, type ApiResponse } from "../template";
 import type { Account } from "../../utils/config";
+import { setRuntimeCredentials, getRuntimeCredentials, hasRuntimeCredentials } from "../../utils/config";
+import { performOAuthFlow } from "../oauth";
 import * as cache from "../cache";
 
 export class Endfield extends Game {
@@ -11,12 +13,55 @@ export class Endfield extends Game {
         Game.list.set(this.name, this);
     }
 
+    async initOAuth(account: Account): Promise<boolean> {
+        if (hasRuntimeCredentials(account.name)) {
+            return true;
+        }
+
+        if (account.account_token) {
+            try {
+                ak.Logger.debug(`  Performing OAuth for ${account.name}...`);
+                const credentials = await performOAuthFlow(account.account_token);
+                setRuntimeCredentials(account.name, {
+                    cred: credentials.cred,
+                    salt: credentials.salt,
+                    userId: credentials.userId,
+                    hgId: credentials.hgId,
+                    obtainedAt: Date.now(),
+                });
+                ak.Logger.debug(`  OAuth successful for ${account.name}`);
+                return true;
+            } catch (error) {
+                ak.Logger.warn(`  OAuth failed for ${account.name}: ${error}`);
+            }
+        }
+
+        if (account.cred) {
+            ak.Logger.debug(`  Using legacy cred for ${account.name}`);
+            setRuntimeCredentials(account.name, {
+                cred: account.cred,
+                salt: "",
+                userId: "",
+                obtainedAt: Date.now(),
+            });
+            return true;
+        }
+
+        ak.Logger.error(`  No credentials available for ${account.name}`);
+        return false;
+    }
+
     async init(): Promise<void> {
         ak.Logger.info(`Initializing ${this.name} accounts...`);
 
         for (const account of ak.Config.accounts) {
-            const profile = await getProfile(account);
+            const hasCredentials = await this.initOAuth(account);
+            if (!hasCredentials) {
+                ak.Logger.error(`  Skipping ${account.name}: No valid credentials`);
+                continue;
+            }
 
+            const profile = await getProfile(account);
             const roleParts = account.sk_game_role.split("_");
             const uid = roleParts[1] || account.sk_game_role;
 
@@ -44,12 +89,12 @@ export class Endfield extends Game {
                     }
                 }
             } catch {
-                // Ignore silent errors at boot
+                // Silent at boot
             }
 
             this.accounts.push(stored);
 
-            if (profile || (stored.game?.nickname)) {
+            if (profile || stored.game?.nickname) {
                 const stats = stored.game ? ` (Lv.${stored.game.level}, ${stored.game.charCount} Chars)` : "";
                 const name = stored.profile?.nickname || account.name;
                 ak.Logger.info(`  ${account.name}: ${name}${stats} (UID: ${uid})`);
@@ -75,6 +120,12 @@ export class Endfield extends Game {
             if (cached) return cached;
         }
 
+        const runtimeCreds = getRuntimeCredentials(account.name);
+        if (!runtimeCreds?.salt) {
+            ak.Logger.debug(`fetchGameStats: No salt for ${account.name}, skipping card/detail`);
+            return null;
+        }
+
         try {
             const detailResponse = await ak.Got<ApiResponse<{ detail: {
                 base: { name: string; level: number; worldLevel: number; charNum: number; weaponNum: number };
@@ -85,7 +136,10 @@ export class Endfield extends Game {
             } }>>("SKPortApp", {
                 url: "game/endfield/card/detail",
                 method: "GET",
-            }, { account });
+            }, {
+                account,
+                signPath: "/api/v1/game/endfield/card/detail",
+            });
 
             if (detailResponse.code === 0 && detailResponse.data?.detail) {
                 const d = detailResponse.data.detail;

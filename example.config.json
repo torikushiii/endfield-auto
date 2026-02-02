@@ -42,19 +42,21 @@
     "accounts": [
         {
             "name": "My Main Account",
-            "cred": "YOUR_CRED_TOKEN_HERE",
-            "sk_game_role": "SERVER_UID_RANDOM",
+            "_comment_auth": "Use account_token (recommended) OR cred (legacy)",
+            "account_token": "YOUR_ACCOUNT_TOKEN_FROM_BROWSER_COOKIE",
+            "sk_game_role": "YOUR_UID_SERVER",
             "settings": {
                 "stamina_check": true,
-                "HELP_STAMINA_THRESHOLD": "Current Max Stamina - threshold. E.g. 210 - 10 = 200 threshold",
+                "_help_stamina_threshold": "Current Max Stamina - threshold. E.g. 210 - 10 = 200 threshold",
                 "stamina_threshold": -10,
                 "daily_check": true
             }
         },
         {
-            "name": "My Second Account",
-            "cred": "YOUR_CRED_TOKEN_HERE",
-            "sk_game_role": "SERVER_UID_RANDOM",
+            "name": "My Second Account (Legacy)",
+            "_comment_auth": "Legacy cred-only mode - game stats will not be available",
+            "cred": "YOUR_LEGACY_CRED_TOKEN_HERE",
+            "sk_game_role": "YOUR_UID_SERVER",
             "settings": {
                 "stamina_check": false,
                 "stamina_threshold": -20,

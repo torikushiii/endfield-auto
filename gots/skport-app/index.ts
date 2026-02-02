@@ -11,7 +11,7 @@ const skportAppGot: GotModule = {
         },
     },
     parent: "SKPort",
-    description: "SKPort App client - Android UA for real-time data fetching",
+    description: "SKPort App client - Android UA for game data",
 };
 
 export default skportAppGot;

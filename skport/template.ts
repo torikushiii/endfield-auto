@@ -94,7 +94,11 @@ export async function getProfile(account: Account): Promise<ProfileData["user"] 
         const data = await ak.Got<ApiResponse<ProfileData>>("SKPortWeb", {
             url: "wiki/me",
             method: "GET",
-        }, { account, includeGameRole: false });
+        }, {
+            account,
+            includeGameRole: false,
+            signPath: "/web/v1/wiki/me",
+        });
 
         if (data.code === 0 && data.data?.user) {
             cache.set(cacheKey, data.data.user, 60 * 60 * 1000);

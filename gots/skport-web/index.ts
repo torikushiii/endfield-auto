@@ -12,7 +12,7 @@ const skportWebGot: GotModule = {
         },
     },
     parent: "SKPort",
-    description: "SKPort Web client - browser UA for web portal operations",
+    description: "SKPort Web client - browser UA for web operations",
 };
 
 export default skportWebGot;

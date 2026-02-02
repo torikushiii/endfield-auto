@@ -7,13 +7,36 @@ const CONFIG_PATH = join(__dirname, "..", "config.json");
 
 export interface Account {
     name: string;
-    cred: string;
+    cred?: string;
+    account_token?: string;
     sk_game_role: string;
     settings?: {
         stamina_check?: boolean;
         stamina_threshold?: number;
         daily_check?: boolean;
     };
+}
+
+export interface RuntimeCredentials {
+    cred: string;
+    salt: string;
+    userId: string;
+    hgId?: string;
+    obtainedAt: number;
+}
+
+const runtimeCredentialsStore = new Map<string, RuntimeCredentials>();
+
+export function setRuntimeCredentials(accountName: string, credentials: RuntimeCredentials): void {
+    runtimeCredentialsStore.set(accountName, credentials);
+}
+
+export function getRuntimeCredentials(accountName: string): RuntimeCredentials | undefined {
+    return runtimeCredentialsStore.get(accountName);
+}
+
+export function hasRuntimeCredentials(accountName: string): boolean {
+    return runtimeCredentialsStore.has(accountName);
 }
 
 export type PlatformType = "discord" | "webhook" | "telegram";
