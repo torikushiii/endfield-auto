@@ -7,6 +7,7 @@ export interface SKPortOptions {
     account: Account;
     includeGameRole?: boolean;
     signPath?: string;
+    useV2Sign?: boolean;
 }
 
 const skportGot: GotModule = {
@@ -14,7 +15,7 @@ const skportGot: GotModule = {
     optionsType: "function",
     options: (...args: unknown[]): GotModuleOptions => {
         const opts = args[0] as SKPortOptions;
-        const { account, includeGameRole = true, signPath } = opts;
+        const { account, includeGameRole = true, signPath, useV2Sign } = opts;
         const timestamp = Math.floor(Date.now() / 1000).toString();
 
         const runtimeCreds = getRuntimeCredentials(account.name);
@@ -26,10 +27,10 @@ const skportGot: GotModule = {
         }
 
         const effectivePath = signPath || "";
-        const signVersion = effectivePath ? getSignVersion(effectivePath) : "v1";
+        const shouldUseV2 = useV2Sign || (effectivePath && getSignVersion(effectivePath) === "v2");
 
         let sign: string;
-        if (signVersion === "v2" && salt) {
+        if (shouldUseV2 && salt) {
             sign = generateSignV2(effectivePath, timestamp, "3", "1.0.0", salt);
         } else {
             sign = generateSignV1(timestamp, cred);

@@ -45,6 +45,8 @@ export class CheckIn {
         const { account, profile, uid } = stored;
         const name = account.name;
 
+        await this.#instance.initOAuth(account);
+
         ak.Logger.info("=".repeat(50));
         ak.Logger.info(`Account: ${name}`);
 
@@ -190,7 +192,11 @@ export class CheckIn {
             const data = await ak.Got<ApiResponse<ClaimData>>("SKPortWeb", {
                 url: "game/endfield/attendance",
                 method: "POST",
-            }, { account });
+            }, {
+                account,
+                signPath: "/web/v1/game/endfield/attendance",
+                useV2Sign: true,
+            });
 
             if (data.code === 0) {
                 ak.Logger.info("  Successfully claimed attendance");

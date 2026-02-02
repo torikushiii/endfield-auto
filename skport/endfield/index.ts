@@ -1,6 +1,6 @@
 import { Game, type SignInResult, type StoredAccount, getProfile, type ApiResponse } from "../template";
 import type { Account } from "../../utils/config";
-import { setRuntimeCredentials, getRuntimeCredentials, hasRuntimeCredentials } from "../../utils/config";
+import { setRuntimeCredentials, getRuntimeCredentials } from "../../utils/config";
 import { performOAuthFlow } from "../oauth";
 import * as cache from "../cache";
 
@@ -13,9 +13,38 @@ export class Endfield extends Game {
         Game.list.set(this.name, this);
     }
 
-    async initOAuth(account: Account): Promise<boolean> {
-        if (hasRuntimeCredentials(account.name)) {
+    async refreshOAuth(account: Account): Promise<boolean> {
+        if (!account.account_token) {
+            return false;
+        }
+
+        try {
+            ak.Logger.debug(`  Refreshing OAuth for ${account.name}...`);
+            const credentials = await performOAuthFlow(account.account_token);
+            setRuntimeCredentials(account.name, {
+                cred: credentials.cred,
+                salt: credentials.salt,
+                userId: credentials.userId,
+                hgId: credentials.hgId,
+                obtainedAt: Date.now(),
+            });
             return true;
+        } catch (error) {
+            ak.Logger.warn(`  OAuth refresh failed for ${account.name}: ${error}`);
+            return false;
+        }
+    }
+
+    async initOAuth(account: Account, forceRefresh = false): Promise<boolean> {
+        const existing = getRuntimeCredentials(account.name);
+        const CREDENTIAL_TTL = 30 * 60 * 1000; // 30 minutes
+
+        if (existing && !forceRefresh) {
+            const age = Date.now() - existing.obtainedAt;
+            if (age < CREDENTIAL_TTL) {
+                return true;
+            }
+            ak.Logger.debug(`  Credentials stale for ${account.name}, refreshing...`);
         }
 
         if (account.account_token) {

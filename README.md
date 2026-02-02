@@ -104,7 +104,7 @@ The `config.json` is the central brain of the assistant.
         {
             "name": "Operator-Alpha",
             "account_token": "YOUR_ACCOUNT_TOKEN",
-            "sk_game_role": "YOUR_UID_SERVER",
+            "sk_game_role": "3_YOUR_UID_SERVER",
             "settings": {
                 "stamina_check": true,
                 "stamina_threshold": -10,
@@ -146,9 +146,8 @@ The `config.json` is the central brain of the assistant.
 ```
 
 ### Account Settings
--   **`account_token`**: Your account token from browser cookies (recommended). Enables full game stats including stamina, level, BP, etc.
--   **`cred`**: Legacy credential (deprecated). Only supports attendance check-in, no game stats.
--   **`sk_game_role`**: Your game role identifier in format `UID_SERVER`.
+-   **`account_token`**: Your account token from browser cookies. Required for all features.
+-   **`sk_game_role`**: Your game role identifier in format `3_UID_SERVER`.
 -   **`stamina_check`**: Enable/Disable stamina monitoring for this account.
 -   **`stamina_threshold`**:
     -   Use a **positive** number for an absolute threshold (e.g., `200`).
@@ -161,21 +160,13 @@ The `config.json` is the central brain of the assistant.
 
 To connect the assistant to your account:
 
-### Method 1: Account Token (Recommended)
 1.  Log in to the [SKPort Endfield Portal](https://game.skport.com/endfield/sign-in).
 2.  Open **Developer Tools** (F12) → **Application** → **Cookies**.
 3.  Find `ACCOUNT_TOKEN` and copy its value.
-4.  Add to config as `account_token`.
+4.  URL decode if needed (replace `%2F` with `/`).
+5.  Add to config as `account_token`.
 
-This method automatically refreshes credentials and enables all features including game stats.
-
-### Method 2: Legacy Cred (Deprecated)
-1.  Log in to the [SKPort Endfield Portal](https://game.skport.com/endfield/sign-in).
-2.  Open **Developer Tools** (F12) → **Network Tab**.
-3.  Perform any action and find a request to `zonai.skport.com`.
-4.  Copy the `cred` and `sk-game-role` from the **Request Headers**.
-
-> **Note**: Legacy cred only supports attendance check-in. Game stats (stamina, level, etc.) will not be available.
+> **Note**: The account token is used to authenticate with Gryphline and obtain session credentials. Credentials are automatically refreshed every 30 minutes.
 
 ---
 
