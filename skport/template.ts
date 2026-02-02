@@ -14,6 +14,7 @@ export interface GameStats {
     charCount?: number;
     worldLevel?: number;
     weaponCount?: number;
+    lastLoginTime?: number;
     stamina?: { current: number; max: number; recoveryTime?: number };
     bp?: { level: number; maxLevel: number };
     daily?: { activation: number; maxActivation: number };
@@ -36,7 +37,9 @@ export interface SignInResult {
     };
     attendance?: {
         totalSignIns?: number;
+        calendar?: Array<{ awardId: string; available: boolean; done: boolean }>;
     };
+    nextReward?: Reward;
     error?: string;
 }
 

@@ -1,5 +1,6 @@
 import type { CommandModule, CommandContext } from "../../classes/command";
 import type { CheckInResult } from "../../skport/endfield/check-in";
+import { drawCheckInCard } from "../../skport/endfield/renderer";
 
 const ENDFIELD_ICON = "https://play-lh.googleusercontent.com/IHJeGhqSpth4VzATp_afjsCnFRc-uYgGC1EV3b2tryjyZsVrbcaeN5L_m8VKwvOSpIu_Skc49mDpLsAzC6Jl3mM";
 const EMBED_COLOR_SUCCESS = 0xFFD700;
@@ -87,10 +88,23 @@ const checkIn: CommandModule = {
             for (let i = 0; i < results.length; i++) {
                 const result = results[i]!;
                 if (ctx.platform.name === "Discord") {
-                    const embed = buildDiscordEmbed(result, i + 1, results.length);
-                    await ctx.ephemeral({ embeds: [embed] });
+                    try {
+                        const buffer = await drawCheckInCard(result);
+                        const embed = buildDiscordEmbed(result, i + 1, results.length);
+                        await ctx.ephemeral({
+                            embeds: [{
+                                ...embed,
+                                image: { url: "attachment://checkin.png" }
+                            }],
+                            files: [{ name: "checkin.png", attachment: buffer }]
+                        });
+                    } catch (error) {
+                        ak.Logger.error("Failed to generate check-in card:", error);
+                        const embed = buildDiscordEmbed(result, i + 1, results.length);
+                        await ctx.ephemeral({ embeds: [embed] });
+                    }
                 } else {
-                    await ctx.ephemeral(`${result.name}: ${result.status}`);
+                    await ctx.ephemeral(`${result.profile.nickname || result.name}: ${result.status}`);
                 }
             }
 

@@ -3,6 +3,8 @@ import type { GameStats } from "../../skport/template";
 import { formatTimeRemaining } from "../../utils/time-units";
 import * as cache from "../../skport/cache";
 import Endfield from "../../skport/endfield";
+import { drawDashboard } from "../../skport/endfield/renderer";
+import { AttachmentBuilder } from "discord.js";
 
 const ENDFIELD_ICON = "https://play-lh.googleusercontent.com/IHJeGhqSpth4VzATp_afjsCnFRc-uYgGC1EV3b2tryjyZsVrbcaeN5L_m8VKwvOSpIu_Skc49mDpLsAzC6Jl3mM";
 const EMBED_COLOR = 0x2ECC71;
@@ -133,13 +135,20 @@ const terminal: CommandModule = {
                 }
 
                 if (ctx.platform.name === "Discord") {
-                    const embed = buildTerminalEmbed(
-                        stored.account.name,
-                        stored.game,
-                        stored.uid,
-                        stored.profile?.avatar
-                    );
-                    await ctx.ephemeral({ embeds: [embed] });
+                    try {
+                        const buffer = await drawDashboard(stored);
+                        const attachment = new AttachmentBuilder(buffer, { name: "terminal.png" });
+                        await ctx.ephemeral({ files: [attachment] });
+                    } catch (error) {
+                        ak.Logger.error("Failed to draw dashboard, falling back to embed:", error);
+                        const embed = buildTerminalEmbed(
+                            stored.account.name,
+                            stored.game,
+                            stored.uid,
+                            stored.profile?.avatar
+                        );
+                        await ctx.ephemeral({ embeds: [embed] });
+                    }
                 } else {
                     const s = stored.game;
                     let text = `[${s.nickname || stored.account.name}]\n`;

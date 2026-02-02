@@ -1,4 +1,5 @@
 import type { CheckInResult } from "../../skport/endfield/check-in";
+import { drawCheckInCard } from "../../skport/endfield/renderer";
 
 const ENDFIELD_ICON = "https://play-lh.googleusercontent.com/IHJeGhqSpth4VzATp_afjsCnFRc-uYgGC1EV3b2tryjyZsVrbcaeN5L_m8VKwvOSpIu_Skc49mDpLsAzC6Jl3mM";
 const EMBED_COLOR_SUCCESS = 0xFFD700;
@@ -111,8 +112,21 @@ export default {
                 for (let i = 0; i < results.length; i++) {
                     const result = results[i]!;
                     if (platform.name === "Discord") {
-                        const embed = buildDiscordEmbed(result, i + 1, results.length);
-                        await platform.send({ embeds: [embed] });
+                        try {
+                            const buffer = await drawCheckInCard(result);
+                            const embed = buildDiscordEmbed(result, i + 1, results.length);
+                            await platform.send({
+                                embeds: [{
+                                    ...embed,
+                                    image: { url: "attachment://checkin.png" }
+                                }],
+                                files: [{ name: "checkin.png", attachment: buffer }]
+                            });
+                        } catch (error) {
+                            ak.Logger.error("Failed to generate check-in card for schedule:", error);
+                            const embed = buildDiscordEmbed(result, i + 1, results.length);
+                            await platform.send({ embeds: [embed] });
+                        }
                     } else {
                         await platform.send(`${result.name}: ${result.status}`);
                     }

@@ -157,7 +157,7 @@ export class Endfield extends Game {
 
         try {
             const detailResponse = await ak.Got<ApiResponse<{ detail: {
-                base: { name: string; level: number; worldLevel: number; charNum: number; weaponNum: number };
+                base: { name: string; level: number; worldLevel: number; charNum: number; weaponNum: number; lastLoginTime: string };
                 spaceShip: { rooms: Array<{ id: string; level: number }> };
                 dungeon: { curStamina: string | number; maxStamina: string | number; maxTs?: string | number };
                 bpSystem: { curLevel: number; maxLevel: number };
@@ -178,6 +178,7 @@ export class Endfield extends Game {
                     worldLevel: d.base.worldLevel,
                     charCount: d.base.charNum,
                     weaponCount: d.base.weaponNum,
+                    lastLoginTime: Number(d.base.lastLoginTime),
                     serverName: "Asia",
                     stamina: {
                         current: Number(d.dungeon.curStamina),

@@ -7,9 +7,14 @@ const ENDFIELD_ICON = "https://play-lh.googleusercontent.com/IHJeGhqSpth4VzATp_a
 
 export interface AttendanceData {
     hasToday: boolean;
-    records?: Array<{
-        resourceId: string;
-        resourceName: string;
+    calendar?: Array<{
+        awardId: string;
+        available: boolean;
+        done: boolean;
+    }>;
+    resourceInfoMap?: Record<string, {
+        id: string;
+        name: string;
         count: number;
         icon: string;
     }>;
@@ -45,7 +50,7 @@ export class CheckIn {
         const { account, profile, uid } = stored;
         const name = account.name;
 
-        await this.#instance.initOAuth(account);
+        const hasAuth = await this.#instance.initOAuth(account);
 
         ak.Logger.info("=".repeat(50));
         ak.Logger.info(`Account: ${name}`);
@@ -67,9 +72,9 @@ export class CheckIn {
             error: undefined,
         };
 
-        if (!account.cred || !account.sk_game_role) {
-            ak.Logger.error("  Missing cred or sk_game_role in config");
-            result.error = "Missing cred or sk_game_role in config";
+        if (!hasAuth || !account.sk_game_role) {
+            ak.Logger.error("  Missing valid credentials or sk_game_role");
+            result.error = "Missing valid credentials or sk_game_role";
             return result;
         }
 
@@ -89,21 +94,42 @@ export class CheckIn {
         const { data: attendanceData, canClaim } = await this.#checkAttendance(account);
 
         if (attendanceData?.code === 0 && attendanceData.data) {
-            if (attendanceData.data.records && attendanceData.data.records.length > 0) {
+            const data = attendanceData.data;
+            const calendar = data.calendar || [];
+            const doneRecords = calendar.filter(r => r.done);
+
+            if (doneRecords.length > 0) {
                 result.attendance = {
-                    totalSignIns: attendanceData.data.records.length,
+                    totalSignIns: doneRecords.length,
+                    calendar: calendar.map(c => ({ awardId: c.awardId, available: c.available, done: c.done })),
                 };
 
-                // If already claimed, extract last reward from history
+                // If already claimed, extract today's reward from the last 'done' entry in calendar
                 if (!canClaim) {
-                    const lastRecord = attendanceData.data.records[attendanceData.data.records.length - 1];
-                    if (lastRecord) {
-                        result.rewards = [{
-                            name: lastRecord.resourceName,
-                            count: lastRecord.count,
-                            icon: lastRecord.icon,
-                        }];
+                    const lastDone = doneRecords[doneRecords.length - 1];
+                    if (lastDone) {
+                        const info = data.resourceInfoMap?.[lastDone.awardId];
+                        if (info) {
+                            result.rewards = [{
+                                name: info.name,
+                                count: info.count,
+                                icon: info.icon,
+                            }];
+                        }
                     }
+                }
+            }
+
+            // Extract next reward
+            const firstClaimable = calendar.find(r => !r.done);
+            if (firstClaimable) {
+                const info = data.resourceInfoMap?.[firstClaimable.awardId];
+                if (info) {
+                    result.nextReward = {
+                        name: info.name,
+                        count: info.count,
+                        icon: info.icon,
+                    };
                 }
             }
         }
@@ -201,15 +227,6 @@ export class CheckIn {
             if (data.code === 0) {
                 ak.Logger.info("  Successfully claimed attendance");
 
-                const cacheKey = `attendance:endfield:${account.name}`;
-                cache.set(cacheKey, {
-                    code: 0,
-                    data: {
-                        hasToday: true,
-                        records: new Array(result.attendance?.totalSignIns || 0).fill({})
-                    }
-                }, 12 * 60 * 60 * 1000);
-
                 const awards = data.data?.awardIds ?? [];
                 const resourceMap = data.data?.resourceInfoMap ?? {};
                 const rewards: Reward[] = [];
@@ -225,6 +242,26 @@ export class CheckIn {
                         });
                     }
                 }
+
+                const cacheKey = `attendance:endfield:${account.name}`;
+                const total = (result.attendance?.totalSignIns || 0) + 1;
+                const cachedRecords: Array<{ resourceName?: string; count?: number; icon?: string }> = new Array(total).fill({});
+                const lastReward = rewards[0];
+                if (lastReward) {
+                    cachedRecords[total - 1] = {
+                        resourceName: lastReward.name,
+                        count: lastReward.count,
+                        icon: lastReward.icon,
+                    };
+                }
+
+                cache.set(cacheKey, {
+                    code: 0,
+                    data: {
+                        hasToday: true,
+                        records: cachedRecords,
+                    }
+                }, 12 * 60 * 60 * 1000);
 
                 return { success: true, rewards };
             }

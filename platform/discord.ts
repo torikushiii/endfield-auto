@@ -146,6 +146,8 @@ export class DiscordPlatform extends Platform {
         ak.Logger.info("Sending Discord notification...");
 
         let payload: DiscordPayload;
+        let files: Array<{ name: string; attachment: Buffer }> = [];
+
         if (typeof content === "string") {
             payload = {
                 username: "Endfield Auto",
@@ -153,24 +155,45 @@ export class DiscordPlatform extends Platform {
                 content: content,
             };
         } else {
+            if (Array.isArray(content.files)) {
+                files = content.files as Array<{ name: string; attachment: Buffer }>;
+            }
             payload = {
                 username: "Endfield Auto",
                 avatar_url: ENDFIELD_ICON,
-                ...(content.embeds ? content : { embeds: Array.isArray(content) ? content : [content] }),
+                ...(content.embeds ? { embeds: content.embeds as Record<string, unknown>[] } : { embeds: Array.isArray(content) ? content : [content] as Record<string, unknown>[] }),
             };
+            if (content.content) {
+                payload.content = content.content as string;
+            }
         }
 
         try {
-            const response = await fetch(this.#webhookUrl, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload),
-            });
+            let response: Response;
+            if (files.length > 0) {
+                const formData = new FormData();
+                formData.append("payload_json", JSON.stringify(payload));
+                files.forEach((file, index) => {
+                    formData.append(`file[${index}]`, new Blob([new Uint8Array(file.attachment)]), file.name);
+                });
 
-            if (response.status === 204) {
+                response = await fetch(this.#webhookUrl, {
+                    method: "POST",
+                    body: formData,
+                });
+            } else {
+                response = await fetch(this.#webhookUrl, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload),
+                });
+            }
+
+            if (response.status === 204 || response.status === 200) {
                 ak.Logger.info("Discord notification sent");
             } else {
-                ak.Logger.warn(`Discord webhook returned: ${response.status}`);
+                const text = await response.text();
+                ak.Logger.warn(`Discord webhook returned: ${response.status} - ${text}`);
             }
         } catch (error) {
             ak.Logger.error(`Failed to send Discord notification: ${error}`);
