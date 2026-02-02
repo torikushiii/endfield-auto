@@ -6,6 +6,9 @@ import Endfield from "../../skport/endfield";
 
 const ENDFIELD_ICON = "https://play-lh.googleusercontent.com/IHJeGhqSpth4VzATp_afjsCnFRc-uYgGC1EV3b2tryjyZsVrbcaeN5L_m8VKwvOSpIu_Skc49mDpLsAzC6Jl3mM";
 const EMBED_COLOR = 0x2ECC71;
+const STAMINA_COLOR_THRESHOLD = 0xF1C40F;
+const STAMINA_COLOR_NEAR = 0xE67E22;
+const STAMINA_COLOR_FULL = 0xE74C3C;
 
 function buildTerminalEmbed(accountName: string, stats: GameStats, uid: string, avatar?: string) {
     const nickname = stats.nickname || accountName;
@@ -16,11 +19,24 @@ function buildTerminalEmbed(accountName: string, stats: GameStats, uid: string, 
     if (stats.serverName) fields.push({ name: "Region", value: stats.serverName, inline: true });
     if (stats.worldLevel !== undefined) fields.push({ name: "World Level", value: stats.worldLevel.toString(), inline: true });
 
+    let embedColor = EMBED_COLOR;
+
     if (stats.stamina) {
-        let staminaValue = `${stats.stamina.current}/${stats.stamina.max}`;
-        if (stats.stamina.recoveryTime) {
+        const { current, max } = stats.stamina;
+        let staminaValue = `**${current}** / ${max}`;
+
+        if (current >= max) {
+            staminaValue = `**${current} / ${max} (FULL)**`;
+            embedColor = STAMINA_COLOR_FULL;
+        } else if (current >= max - 5) {
+            embedColor = STAMINA_COLOR_NEAR;
+        } else if (current >= max - 20) {
+            embedColor = STAMINA_COLOR_THRESHOLD;
+        }
+
+        if (stats.stamina.recoveryTime && current < max) {
             const timeStr = formatTimeRemaining(stats.stamina.recoveryTime);
-            staminaValue += ` (${timeStr})`;
+            staminaValue += `\nRestored in: ${timeStr}`;
         }
         fields.push({ name: "Stamina", value: staminaValue, inline: true });
     }
@@ -37,7 +53,7 @@ function buildTerminalEmbed(accountName: string, stats: GameStats, uid: string, 
 
     return {
         title: `Protocol Terminal: ${nickname}`,
-        color: EMBED_COLOR,
+        color: embedColor,
         thumbnail: { url: avatar || ENDFIELD_ICON },
         fields,
         footer: { text: "Endfield Field Terminal Status", icon_url: ENDFIELD_ICON },

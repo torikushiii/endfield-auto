@@ -5,7 +5,9 @@ import Endfield from "../../skport/endfield";
 
 const ENDFIELD_ICON = "https://play-lh.googleusercontent.com/IHJeGhqSpth4VzATp_afjsCnFRc-uYgGC1EV3b2tryjyZsVrbcaeN5L_m8VKwvOSpIu_Skc49mDpLsAzC6Jl3mM";
 const EMBED_COLOR_STAMINA = 0x00A8FF;
-const EMBED_COLOR_WARNING = 0xF1C40F;
+const EMBED_COLOR_THRESHOLD = 0xF1C40F; // Yellow
+const EMBED_COLOR_NEAR = 0xE67E22;      // Orange
+const EMBED_COLOR_FULL = 0xE74C3C;      // Red
 
 function buildStaminaEmbed(account: StoredAccount, threshold: number) {
     const { profile, game, account: configAccount } = account;
@@ -18,7 +20,24 @@ function buildStaminaEmbed(account: StoredAccount, threshold: number) {
 
     // threshold is negative, e.g., -10
     const target = max + threshold;
-    const isAboveThreshold = current >= target;
+
+    let title = "Stamina Report";
+    let description = `**${nickname}**'s stamina status update.`;
+    let color = EMBED_COLOR_STAMINA;
+
+    if (current >= max) {
+        title = "Stamina Full";
+        description = `**${nickname}**'s stamina is **FULL**!`;
+        color = EMBED_COLOR_FULL;
+    } else if (current >= max - 5) {
+        title = "Stamina Almost Full";
+        description = `**${nickname}**'s stamina is almost full!`;
+        color = EMBED_COLOR_NEAR;
+    } else if (current >= target) {
+        title = "Stamina Alert";
+        description = `**${nickname}**'s stamina is reaching the limit!`;
+        color = EMBED_COLOR_THRESHOLD;
+    }
 
     const fields = [
         { name: "Current Stamina", value: `**${current}** / ${max}`, inline: true },
@@ -33,11 +52,9 @@ function buildStaminaEmbed(account: StoredAccount, threshold: number) {
     }
 
     return {
-        title: isAboveThreshold ? "Stamina Alert" : "Stamina Report",
-        description: isAboveThreshold
-            ? `**${nickname}**'s stamina is reaching the limit!`
-            : `**${nickname}**'s stamina status update.`,
-        color: isAboveThreshold ? EMBED_COLOR_WARNING : EMBED_COLOR_STAMINA,
+        title,
+        description,
+        color,
         thumbnail: { url: avatar },
         fields,
         footer: { text: "SKPort Stamina Monitor", icon_url: ENDFIELD_ICON },
@@ -105,13 +122,20 @@ export default {
             if (stats.stamina.current >= target) {
                 ak.Logger.warn(`Stamina alert for ${account.account.name}: ${stats.stamina.current} points!`);
 
+                let prefix = "Stamina Alert";
+                if (stats.stamina.current >= stats.stamina.max) {
+                    prefix = "Stamina Full";
+                } else if (stats.stamina.current >= stats.stamina.max - 5) {
+                    prefix = "Stamina Near Full";
+                }
+
                 for (const platform of ak.Platforms.values()) {
                     if (platform.isConfigured()) {
                         if (platform.name === "Discord") {
                             const embed = buildStaminaEmbed(account, threshold);
                             await platform.send({ embeds: [embed] });
                         } else {
-                            await platform.send(`[Stamina Alert] ${account.account.name}: ${stats.stamina.current}/${stats.stamina.max}`);
+                            await platform.send(`[${prefix}] ${account.account.name}: ${stats.stamina.current}/${stats.stamina.max}`);
                         }
                     }
                 }
