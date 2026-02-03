@@ -9,7 +9,6 @@ const EMBED_COLOR_ERROR = 0xE74C3C;
 function buildDiscordEmbed(result: CheckInResult, index: number, total: number) {
     const { name, status, rewards, profile, error } = result;
     const nickname = profile.nickname || name;
-    const avatar = profile.avatar || ENDFIELD_ICON;
 
     let title: string;
     let description: string;
@@ -64,7 +63,7 @@ function buildDiscordEmbed(result: CheckInResult, index: number, total: number) 
         color,
         thumbnail: { url: thumbnail },
         fields,
-        footer: { text: `SKPort Auto Check-In (${index}/${total}) Executed`, icon_url: avatar },
+        footer: { text: `SKPort Auto Check-In (${index}/${total}) Executed`, icon_url: ENDFIELD_ICON },
         timestamp: new Date().toISOString(),
     };
 }

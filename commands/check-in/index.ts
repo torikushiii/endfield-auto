@@ -16,7 +16,6 @@ function buildDiscordEmbed(result: CheckInResult, index: number, total: number) 
     let description: string;
     let color: number;
     const fields: Array<{ name: string; value: string; inline: boolean }> = [];
-    let thumbnail = ENDFIELD_ICON;
 
     switch (status) {
     case "claimed":
@@ -45,7 +44,6 @@ function buildDiscordEmbed(result: CheckInResult, index: number, total: number) 
             .map((r) => `- **${r.name}** x${r.count}`)
             .join("\n");
         fields.push({ name: "Today's Reward", value: rewardsText, inline: false });
-        thumbnail = rewards[0]?.icon || ENDFIELD_ICON;
     }
 
     if (result.game) {
@@ -65,7 +63,7 @@ function buildDiscordEmbed(result: CheckInResult, index: number, total: number) 
         color,
         thumbnail: { url: avatar },
         fields,
-        footer: { text: `SKPort Auto Check-In (${index}/${total}) Executed`, icon_url: thumbnail },
+        footer: { text: `SKPort Auto Check-In (${index}/${total}) Executed`, icon_url: ENDFIELD_ICON },
         timestamp: new Date().toISOString(),
     };
 }
