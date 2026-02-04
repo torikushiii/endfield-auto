@@ -7,4 +7,5 @@ services:
     volumes:
       - ./config.json:/app/config.json
     environment:
+      # - LOG_LEVEL=debug
       - TZ=Asia/Shanghai
