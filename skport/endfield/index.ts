@@ -117,8 +117,8 @@ export class Endfield extends Game {
                         }
                     }
                 }
-            } catch {
-                // Silent at boot
+            } catch (error) {
+                ak.Logger.debug(`  ${account.name}: Fetching game stats failed during boot: ${error}`);
             }
 
             this.accounts.push(stored);
@@ -157,7 +157,7 @@ export class Endfield extends Game {
 
         try {
             const detailResponse = await ak.Got<ApiResponse<{ detail: {
-                base: { name: string; level: number; worldLevel: number; charNum: number; weaponNum: number; lastLoginTime: string };
+                base: { serverName: string; name: string; level: number; worldLevel: number; charNum: number; weaponNum: number; lastLoginTime: string };
                 spaceShip: { rooms: Array<{ id: string; level: number }> };
                 dungeon: { curStamina: string | number; maxStamina: string | number; maxTs?: string | number };
                 bpSystem: { curLevel: number; maxLevel: number };
@@ -179,7 +179,7 @@ export class Endfield extends Game {
                     charCount: d.base.charNum,
                     weaponCount: d.base.weaponNum,
                     lastLoginTime: Number(d.base.lastLoginTime),
-                    serverName: "Asia",
+                    serverName: d.base.serverName,
                     stamina: {
                         current: Number(d.dungeon.curStamina),
                         max: Number(d.dungeon.maxStamina),
@@ -198,9 +198,11 @@ export class Endfield extends Game {
                 cache.set(cacheKey, stats, 10 * 60 * 1000);
                 return stats;
             }
+
+            ak.Logger.debug(`fetchGameStats for ${account.name} failed (code ${detailResponse.code}): ${detailResponse.message || "No message"}`, { fullResponse: detailResponse });
             return null;
         } catch (error) {
-            ak.Logger.debug(`fetchGameStats failed: ${error}`);
+            ak.Logger.debug(`fetchGameStats failed for ${account.name}`, { error: error instanceof Error ? { message: error.message, stack: error.stack } : error });
             return null;
         }
     }

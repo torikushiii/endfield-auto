@@ -107,8 +107,11 @@ export async function getProfile(account: Account): Promise<ProfileData["user"] 
             cache.set(cacheKey, data.data.user, 60 * 60 * 1000);
             return data.data.user;
         }
+
+        ak.Logger.debug(`getProfile for ${account.name} failed (code ${data.code}): ${data.message || "No message"}`, { fullResponse: data });
         return null;
-    } catch {
+    } catch (error) {
+        ak.Logger.debug(`getProfile failed for ${account.name}`, { error: error instanceof Error ? { message: error.message, stack: error.stack } : error });
         return null;
     }
 }
