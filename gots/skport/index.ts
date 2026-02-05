@@ -16,8 +16,7 @@ const skportGot: GotModule = {
     options: (...args: unknown[]): GotModuleOptions => {
         const opts = args[0] as SKPortOptions;
         const { account, includeGameRole = true, signPath, useV2Sign } = opts;
-        const now = Date.now() + (globalThis.ak?.TimeOffset || 0);
-        const timestamp = Math.floor(now / 1000).toString();
+        const timestamp = Math.floor(Date.now() / 1000).toString();
 
         const runtimeCreds = getRuntimeCredentials(account.name);
         const cred = runtimeCreds?.cred || account.cred;

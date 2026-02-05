@@ -17,7 +17,6 @@ interface AkNamespace {
     Platforms: Map<string, Platform>;
     Commands: Commands;
     SKPort: typeof Game;
-    TimeOffset: number;
 }
 
 interface GotCallable {
