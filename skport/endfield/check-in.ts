@@ -98,49 +98,67 @@ export class CheckIn {
             const calendar = data.calendar || [];
             const doneRecords = calendar.filter(r => r.done);
 
-            if (doneRecords.length > 0) {
-                result.attendance = {
-                    totalSignIns: doneRecords.length,
-                    calendar: calendar.map(c => ({ awardId: c.awardId, available: c.available, done: c.done })),
-                };
+            result.attendance = {
+                totalSignIns: doneRecords.length,
+                calendar: calendar.map(c => ({ awardId: c.awardId, available: c.available, done: c.done })),
+            };
 
-                // If already claimed, extract today's reward from the last 'done' entry in calendar
-                if (!canClaim) {
-                    const lastDone = doneRecords[doneRecords.length - 1];
-                    if (lastDone) {
-                        const info = data.resourceInfoMap?.[lastDone.awardId];
+            if (!canClaim) {
+                const lastDone = doneRecords[doneRecords.length - 1];
+                if (lastDone) {
+                    const info = data.resourceInfoMap?.[lastDone.awardId];
+                    if (info) {
+                        result.rewards = [{
+                            name: info.name,
+                            count: info.count,
+                            icon: info.icon,
+                        }];
+                    }
+                }
+
+                const firstNotDone = calendar.find(r => !r.done);
+                if (firstNotDone) {
+                    const info = data.resourceInfoMap?.[firstNotDone.awardId];
+                    if (info) {
+                        result.nextReward = {
+                            name: info.name,
+                            count: info.count,
+                            icon: info.icon,
+                        };
+                    }
+                }
+            } else {
+                const todayRecord = calendar.find(r => !r.done);
+                if (todayRecord) {
+                    const todayIndex = calendar.indexOf(todayRecord);
+                    const nextRecord = calendar.slice(todayIndex + 1).find(r => !r.done);
+                    if (nextRecord) {
+                        const info = data.resourceInfoMap?.[nextRecord.awardId];
                         if (info) {
-                            result.rewards = [{
+                            result.nextReward = {
                                 name: info.name,
                                 count: info.count,
                                 icon: info.icon,
-                            }];
+                            };
                         }
                     }
-                }
-            }
-
-            // Extract next reward
-            const firstClaimable = calendar.find(r => !r.done);
-            if (firstClaimable) {
-                const info = data.resourceInfoMap?.[firstClaimable.awardId];
-                if (info) {
-                    result.nextReward = {
-                        name: info.name,
-                        count: info.count,
-                        icon: info.icon,
-                    };
                 }
             }
         }
 
         if (canClaim) {
-            const { success, rewards } = await this.#claimAttendance(account, result);
+            const { success, rewards } = await this.#claimAttendance(account);
             if (success) {
                 result.status = "claimed";
                 result.rewards = rewards;
-                if (result.attendance?.totalSignIns !== undefined) {
-                    result.attendance.totalSignIns++;
+                if (result.attendance) {
+                    if (result.attendance.totalSignIns !== undefined) {
+                        result.attendance.totalSignIns++;
+                    }
+                    const firstNotDone = result.attendance.calendar?.find(c => !c.done);
+                    if (firstNotDone) {
+                        firstNotDone.done = true;
+                    }
                 }
             } else {
                 result.status = "error";
@@ -213,7 +231,7 @@ export class CheckIn {
         }
     }
 
-    async #claimAttendance(account: Account, result: CheckInResult): Promise<{ success: boolean; rewards: Reward[] }> {
+    async #claimAttendance(account: Account): Promise<{ success: boolean; rewards: Reward[] }> {
         try {
             const data = await ak.Got<ApiResponse<ClaimData>>("SKPortWeb", {
                 url: "game/endfield/attendance",
@@ -244,24 +262,7 @@ export class CheckIn {
                 }
 
                 const cacheKey = `attendance:endfield:${account.name}`;
-                const total = (result.attendance?.totalSignIns || 0) + 1;
-                const cachedRecords: Array<{ resourceName?: string; count?: number; icon?: string }> = new Array(total).fill({});
-                const lastReward = rewards[0];
-                if (lastReward) {
-                    cachedRecords[total - 1] = {
-                        resourceName: lastReward.name,
-                        count: lastReward.count,
-                        icon: lastReward.icon,
-                    };
-                }
-
-                cache.set(cacheKey, {
-                    code: 0,
-                    data: {
-                        hasToday: true,
-                        records: cachedRecords,
-                    }
-                }, 12 * 60 * 60 * 1000);
+                cache.remove(cacheKey);
 
                 return { success: true, rewards };
             }

@@ -38,6 +38,10 @@ export function set<T>(key: string, data: T, ttl: number = 60 * 60 * 1000): void
     });
 }
 
+export function remove(key: string): void {
+    cache.delete(key);
+}
+
 export function cleanup(): void {
     const now = Date.now();
     let count = 0;
