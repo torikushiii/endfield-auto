@@ -68,14 +68,18 @@ export interface StoredAccount {
     lastUpdated: number;
 }
 
-export abstract class Game {
+import { TemplateWithoutId } from "../classes/template";
+
+export abstract class Game extends TemplateWithoutId {
     public abstract name: string;
     public accounts: StoredAccount[] = [];
     public static list: Map<string, Game> = new Map();
 
-    constructor() {}
+    constructor() {
+        super();
+    }
 
-    abstract init(): Promise<void>;
+    abstract override initialize(): Promise<void>;
     abstract checkIn(): Promise<SignInResult[]>;
     abstract fetchGameStats(account: Account, options?: { bypassCache?: boolean }): Promise<StoredAccount["game"] | null>;
 

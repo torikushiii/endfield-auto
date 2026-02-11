@@ -23,11 +23,17 @@ export interface CommandModule {
     run: (ctx: CommandContext, ...args: string[]) => Promise<void> | void;
 }
 
-class Commands {
+import { TemplateWithoutId } from "./template";
+
+class Commands extends TemplateWithoutId {
     #commands = new Map<string, CommandModule>();
     #aliases = new Map<string, string>();
 
-    async importData(): Promise<void> {
+    constructor() {
+        super();
+    }
+
+    override async initialize(): Promise<void> {
         const { loadCommands } = await import("../commands");
         const modules = await loadCommands();
 

@@ -6,14 +6,13 @@ import Endfield from "./skport/endfield";
 import initializeCrons from "./crons";
 import Platform from "./platform/template";
 import Commands from "./classes/command";
+import { Template } from "./classes/template";
 
 async function initializeAk(): Promise<void> {
     const config = loadConfig();
     const gotInstance = new Got();
-    await gotInstance.importData();
-
     const commandInstance = new Commands();
-    await commandInstance.importData();
+    const endfieldInstance = new Endfield();
 
     const gotCallable = Object.assign(
         async <T = unknown>(moduleName: string, options: GotRequestOptions, ...args: unknown[]): Promise<T> => {
@@ -23,10 +22,8 @@ async function initializeAk(): Promise<void> {
     );
 
     const platforms = new Map<string, Platform>();
-
     for (const pConfig of config.platforms) {
         if (!pConfig.active) continue;
-
         const platform = await Platform.create(pConfig);
         platforms.set(pConfig.id, platform);
     }
@@ -40,11 +37,37 @@ async function initializeAk(): Promise<void> {
         SKPort: Game,
     };
 
-    // Initialize specific games
-    const endfield = new Endfield();
-    await endfield.init();
+    const MODULE_INITIALIZE_ORDER: Template[][] = [
+        [gotInstance, commandInstance],
+        [endfieldInstance]
+    ];
 
-    ak.Logger.info("Arknights: Endfield Auto");
+    ak.Logger.info("Arknights: Endfield Auto | Initialization");
+
+    const modulesToDestroy: Template[] = [gotInstance, commandInstance, endfieldInstance];
+
+    for (const batch of MODULE_INITIALIZE_ORDER) {
+        const promises = batch.map(async (mod: Template) => {
+            const start = Date.now();
+            await mod.initialize();
+            const duration = Date.now() - start;
+            ak.Logger.debug(`    Initialized module: ${mod.constructor.name} (${duration}ms)`);
+        });
+        await Promise.all(promises);
+    }
+
+    process.on("SIGINT", async () => {
+        ak.Logger.info("Arknights: Endfield Auto | Shutdown");
+        for (const mod of modulesToDestroy) {
+            try {
+                mod.destroy();
+            } catch (e) {
+                ak.Logger.error(`Error destroying module ${mod.constructor.name}:`, { e });
+            }
+        }
+        process.exit(0);
+    });
+
     ak.Logger.info(`Initialized ${platforms.size} active platform(s)`);
 }
 

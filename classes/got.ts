@@ -23,8 +23,26 @@ export interface GotRequestOptions extends OptionsInit {
     url: string;
 }
 
-class Got {
+import { TemplateWithoutId } from "./template";
+
+class Got extends TemplateWithoutId {
     #children = new Map<string, GotModule>();
+
+    constructor() {
+        super();
+    }
+
+    override async initialize(): Promise<void> {
+        const modules = await import("../gots") as Record<string, GotModule>;
+
+        for (const mod of Object.values(modules)) {
+            if (this.#isGotModule(mod)) {
+                this.#add(mod);
+            }
+        }
+
+        this.#validateHierarchy();
+    }
 
     static sanitize(url: string): string {
         return url
@@ -38,18 +56,6 @@ class Got {
                error instanceof TimeoutError ||
                error instanceof ParseError ||
                error instanceof CancelError;
-    }
-
-    async importData(): Promise<void> {
-        const modules = await import("../gots") as Record<string, GotModule>;
-
-        for (const mod of Object.values(modules)) {
-            if (this.#isGotModule(mod)) {
-                this.#add(mod);
-            }
-        }
-
-        this.#validateHierarchy();
     }
 
     #isGotModule(mod: unknown): mod is GotModule {

@@ -80,7 +80,7 @@ export class Endfield extends Game {
         return false;
     }
 
-    async init(): Promise<void> {
+    override async initialize(): Promise<void> {
         ak.Logger.info(`Initializing ${this.name} accounts...`);
 
         for (const account of ak.Config.accounts) {
