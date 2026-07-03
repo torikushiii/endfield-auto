@@ -8,6 +8,8 @@ const skportAppGot: GotModule = {
         headers: {
             "platform": "3",
             "User-Agent": "Skport/0.7.0 (com.gryphline.skport; build:700089; Android 33; ) Okhttp/5.1.0",
+            "Origin": "https://game.skport.com",
+            "Referer": "https://game.skport.com/",
         },
     },
     parent: "SKPort",

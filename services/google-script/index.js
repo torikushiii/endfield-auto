@@ -58,7 +58,9 @@ function processAccount(account) {
         "timestamp": timestamp,
         "vname": "1.0.0",
         "sign": sign,
-        "User-Agent": "Skport/0.7.0 (com.gryphline.skport; build:700089; Android 33; ) Okhttp/5.1.0"
+        "User-Agent": "Skport/0.7.0 (com.gryphline.skport; build:700089; Android 33; ) Okhttp/5.1.0",
+        "Origin": "https://game.skport.com",
+        "Referer": "https://game.skport.com/"
     };
 
     console.log(`[${account.name}] Checking attendance status...`);
